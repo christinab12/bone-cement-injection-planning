@@ -21,7 +21,7 @@ def get_args():
     parser.add_argument('--save', action='store_true', help='If set to true intermediate scans, e.g. straightened, inpainted are saved')
     return parser.parse_args()
 
-def run()
+def run(args):
     patient_dir = args.patient_dir
     vertebra_fracture_id = args.fracture
 
