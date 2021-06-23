@@ -1,7 +1,7 @@
 # BoneCementInjectionPlanning
 
 ## What is this?
-This repository provides the code for running the XX framework. XX takes a CT image of a patient with one or more Vertebral Compression Fractures and generates an estimation of the healthy state of the patients spine to enable treatment planning. The methodology was first introduced and is described in [Patient-specific virtual spine straightening and vertebra inpainting: An automatic framework for osteoplasty planning](https://arxiv.org/abs/2103.07279).
+This repository provides the code for running BICEPS (Bone Injection of CEment Planning System). BICEPS takes a CT image of a patient with one or more Vertebral Compression Fractures and generates an estimation of the healthy state of the patients spine to enable treatment planning. The methodology was first introduced and is described in [Patient-specific virtual spine straightening and vertebra inpainting: An automatic framework for osteoplasty planning](https://arxiv.org/abs/2103.07279).
 
 ## Installation:
 The code has been implemented using **Python 3.7**. To install the necessary packages for this framework run:
@@ -42,6 +42,14 @@ The vertebra - label correspondence is as follows:
 | L1 | 20 |
 | ... | ... |
 | L5 | 24 |
+
+Additional optional arguments the user may provide are:
+
+```
+height_scale: _to be described_
+visualize: If set the - caution can be expensive to visualize all steps' outputs
+save: If set the intermediate scans are stored
+```
 
 ## How to cite?
 If you use this repo for your research, please cite us in your work by:
