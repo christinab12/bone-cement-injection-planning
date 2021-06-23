@@ -46,8 +46,8 @@ The vertebra - label correspondence is as follows:
 Additional optional arguments the user may provide are:
 
 ```
-height_scale: _to be described_
-visualize: If set the - caution can be expensive to visualize all steps' outputs
+height_scale: *to be described*
+visualize: If set the scans and masks of all steps are shown using napari - caution can be expensive to visualize all steps' outputs
 save: If set the intermediate scans are stored
 ```
 
