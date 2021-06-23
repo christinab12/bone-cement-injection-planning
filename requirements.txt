@@ -1,0 +1,10 @@
+dipy==1.4.1
+dcmstack==0.8.0
+simpleitk==2.0.2
+napari==0.4.10
+torch==1.9.0
+torchvision==0.10.0
+nibabel===3.2.1
+opencv-python==4.5.2.54
+scikit-image==0.18.1
+scikit-learn==0.24.2
