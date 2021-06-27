@@ -70,7 +70,7 @@ def run(args):
     # if this step has not be done already perform straightening
     if not os.path.isfile(straighten_scan_path):
         spine_straighten = SpineStraighten(h_mask_path, h_scan_path, vertebra_mask_path, patient_scan_path, vertebra_fracture_id, vert_range, scale_factor=args.height_scale)
-        final_displacement_field = spine_straighten.Execute()
+        final_displacement_field = spine_straighten.run()
         spine_straighten.straighten_spine(final_displacement_field=final_displacement_field,
                                         straight_scan_name=straighten_scan_path,
                                         straight_mask_name=straighten_mask_path,
