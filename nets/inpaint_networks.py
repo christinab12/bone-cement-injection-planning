@@ -1,3 +1,5 @@
+# this code was taken and only slightly addapted from https://github.com/DAA233/generative-inpainting-pytorch in September 2019
+
 import sys
 import torch
 import torch.nn as nn
