@@ -5,7 +5,7 @@ import napari
 
 from helper import compute_vol, load_scan, get_vert_range, compute_cement
 from segmentation_pipeline import SpineSegmentation
-from SpineStraighten import SpineStraighten
+from spine_straighten import SpineStraighten
 from inpaint import Inpaint
 
 def get_args():
@@ -39,8 +39,8 @@ def run(args):
     else:
         fractured_dir = os.path.join(patient_dir, list_dir[1])
 
-    files = [file for file in os.listdir(fractured_dir) if file.endswith('.nii.gz')]
-    ct_file = [file for file in files if 'ct.nii' in file][0]
+    files = [file for file in os.listdir(fractured_dir) if (file.endswith('.nii.gz') or file.endswith('.nii'))]
+    ct_file = [file for file in files if 'ct' in file][0]
     patient_scan_path = os.path.join(fractured_dir, ct_file)
 
     # ________SEGMENTATION PART________ #
@@ -59,8 +59,7 @@ def run(args):
     # ________SPINE STRAIGHTENING PART________ #  
     
     # to generate the displacement field and do resampling, the healthy_scan must be provided                                             
-    h_mask_path = './healthy_patients/01_healthy_1491_1989_seg_AB.nii'
-    h_scan_path = './healthy_patients/01_healthy_1491_1989.nii'
+    h_mask_path = './data/healthy_ref_mask.nii.gz'
     # specify the vertebrae to include in crop
     vert_range = get_vert_range(vertebra_mask, vertebra_fracture_id)
     print('Cropping scan in vertebra range', vert_range)
@@ -69,7 +68,7 @@ def run(args):
     straighten_mask_path = os.path.join(patient_dir, 'str_mask.nii.gz')
     # if this step has not be done already perform straightening
     if not os.path.isfile(straighten_scan_path):
-        spine_straighten = SpineStraighten(h_mask_path, h_scan_path, vertebra_mask_path, patient_scan_path, vertebra_fracture_id, vert_range, scale_factor=args.height_scale)
+        spine_straighten = SpineStraighten(h_mask_path, vertebra_mask_path, patient_scan_path, vertebra_fracture_id, vert_range, scale_factor=args.height_scale)
         final_displacement_field = spine_straighten.run()
         spine_straighten.straighten_spine(final_displacement_field=final_displacement_field,
                                         straight_scan_name=straighten_scan_path,
@@ -109,7 +108,7 @@ def run(args):
     if args.healthy:
         healthy_dir = os.path.join(patient_dir, list_dir[0])
         
-        files = [file for file in os.listdir(healthy_dir) if file.endswith('.nii.gz')]
+        files = [file for file in os.listdir(healthy_dir) if (file.endswith('.nii.gz') or file.endswith('.nii'))]
         ct_file = [file for file in files if 'ct' in file][0]
 
         # define paths and compute mask
@@ -137,7 +136,7 @@ def run(args):
         else:
             postop_dir = os.path.join(patient_dir, list_dir[2])
         
-        files = [file for file in os.listdir(postop_dir) if file.endswith('.nii.gz')]
+        files = [file for file in os.listdir(postop_dir) if (file.endswith('.nii.gz') or file.endswith('.nii'))]
         ct_file = [file for file in files if 'ct' in file][0]
 
         # define paths and compute mask

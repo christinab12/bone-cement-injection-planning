@@ -500,7 +500,7 @@ if __name__ == "__main__":
     h_mask_path = "./data/healthy_ref_mask.nii"
     p_mask_path = "./data/"
     p_scan_path = "./data/"
-    fracture_id =
+    fracture_id = 20 # check
     vert_range = []
     spine_str = SpineStraighten(h_mask_path=h_mask_path, p_mask_path=p_mask_path, p_scan_path=p_scan_path,
                                 fracture_id=fracture_id, vert_range=vert_range, scale_factor=1.04)
