@@ -15,7 +15,7 @@ To run this framework the user needs to specify two inputs, the patient director
 ```
 python main.py --patient_dir ./patient01/ --fracture 22
 ```
-The patient directory must include a sub-directory with the fractured scan; this can be named arbitrarily but should include the chars 'ct' in it. Additionally, the directory can also include scans of the pre-fractured, healthy, state and post-operative state (again the scans in these sub-directories must include 'ct' in them). The sub-directories are named with the date of the scan. Then the framework will include these in the analysis by adding either ``` --healthy ``` or ``` --post_op ``` as arguments when running main. An example of the structure is as follows:
+The patient directory must include a sub-directory with the fractured scan; this can be named arbitrarily but should include the chars 'ct' in it. Currently only nifti files are expected, so file should have ending ```.nii``` or ```nii.gz```. Additionally, the directory can also include scans of the pre-fractured, healthy, state and post-operative state (again the scans in these sub-directories must include 'ct' in them). The sub-directories are named with the date of the scan. Then the framework will include these in the analysis by adding either ``` --healthy ``` or ``` --post_op ``` as arguments when running main. An example of the structure is as follows:
 
 ```
 --patient01
