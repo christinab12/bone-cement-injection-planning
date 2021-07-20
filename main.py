@@ -52,6 +52,7 @@ def run(args):
 
     # load vertebra mask and compute volume of fracture
     img, img_header, _ = load_scan(patient_scan_path)
+    img_spacing = img_header.get_zooms()
     vertebra_mask, mask_header, _ = load_scan(vertebra_mask_path)
     mask_spacing = mask_header.get_zooms()
     fractured_volume = compute_vol(vertebra_mask, vertebra_fracture_id, mask_spacing)
@@ -84,7 +85,7 @@ def run(args):
     # ________INPAINTING PART________ # 
 
     # define path to save inpainted scan and mask
-    inpaint_mask_path = os.path.join(patient_dir, 'inpaint_mask_%s.nii.gz'%(vertebra_fracture_id))
+    inpaint_mask_path = os.path.join(patient_dir, 'inpaint_mask_fuse_%s.nii.gz'%(vertebra_fracture_id))
     inpaint_img_path =  os.path.join(patient_dir, 'inpaint_img_%s.nii.gz'%(vertebra_fracture_id)) 
     # if this step has not be done already perform inpainting
     if not os.path.isfile(inpaint_mask_path):
@@ -131,7 +132,7 @@ def run(args):
 
     # if the scan after the fracture is available compare cement volume with computed upper bound
     if args.post_op: 
-        if not healthy:
+        if not args.healthy:
             postop_dir = os.path.join(patient_dir, list_dir[1])
         else:
             postop_dir = os.path.join(patient_dir, list_dir[2])
