@@ -1,0 +1,2 @@
+class PedicleDetection():
+    pass
