@@ -167,17 +167,17 @@ def run(args):
     
             viewer = napari.Viewer()
             viewer.add_image(img, name='fracture', scale=img_spacing)
-            viewer.add_labels(vertebra_mask, name='fractured_segmentation', scale=mask_spacing)
+            viewer.add_labels(vertebra_mask.astype(int), name='fractured_segmentation', scale=mask_spacing)
             viewer.add_image(straighten_scan_arr, name='straightened', scale=straighten_scan_spacing)
-            viewer.add_labels(straighten_mask_arr, name='straightened_segmentation', scale=straighten_mask_spacing)
-            viewer.add_labels(inpainted_mask, name='inpainted_segmentation', scale=inpaint_mask_spacing)
+            viewer.add_labels(straighten_mask_arr.astype(int), name='straightened_segmentation', scale=straighten_mask_spacing)
+            viewer.add_labels(inpainted_mask.astype(int), name='inpainted_segmentation', scale=inpaint_mask_spacing)
             
             if args.healthy:
                 viewer.add_image(healthy_img, name='healthy', scale=healthy_img_spacing)
-                viewer.add_labels(healthy_vertebra_mask, name='healthy-segmentation', scale=healthy_mask_spacing)    
+                viewer.add_labels(healthy_vertebra_mask.astype(int), name='healthy-segmentation', scale=healthy_mask_spacing)
             if args.post_op: 
                 viewer.add_image(postop_img, name='post-op', scale=postop_img_spacing)
-                viewer.add_labels(postop_vertebra_mask, name='post-op-segmentation', scale=postop_mask_spacing)
+                viewer.add_labels(postop_vertebra_mask.astype(int), name='post-op-segmentation', scale=postop_mask_spacing)
     
     # remove any temporarily created files
     if not args.save:
