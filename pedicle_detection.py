@@ -14,6 +14,7 @@ from scipy.misc import derivative
 import sys
 import cv2
 import math
+import os
 
 import matplotlib.patches
 import matplotlib.pyplot as plt
@@ -33,8 +34,9 @@ from data_utilities import *
 
 class PedicleDetection():
 
-    def __init__(self, patient_dir, inpaint_img_path, inpaint_msk_path, vert):
+    def __init__(self, patient_dir, inpaint_img_path, inpaint_msk_path, inpaint_cent_path, vert, mode='segmentation'):
         self.vert = vert
+        self.mode = mode
         self.SLICES_PER_VERTEBRA = 5
         self.COUNTER = 0
 
@@ -49,7 +51,7 @@ class PedicleDetection():
         # Load files
         img_nib = nib.load(inpaint_img_path)
         msk_nib = nib.load(inpaint_msk_path)
-        ctd_list = load_centroids(f'{patient_dir}/{patient_dir[2:]}_inpaint_seg-subreg_ctd.json')
+        ctd_list = load_centroids(inpaint_cent_path)
 
         """
         Re-orient image and centroids
@@ -99,7 +101,7 @@ class PedicleDetection():
         axs[1].imshow(im_np_cor, cmap=plt.cm.gray, norm=wdw_sbone)
         axs[1].imshow(msk_np_cor, cmap=cm_itk, alpha=0.3, vmin=1, vmax=64)
         plot_cor_centroids(axs[1], ctd_iso, zooms)
-        fig.savefig(f'run/visualized/{self.COUNTER}')
+        fig.savefig(f'run_{self.mode}/visualized/{self.COUNTER}')
         self.COUNTER += 1
 
         self.img_iso = img_iso
@@ -120,6 +122,8 @@ class PedicleDetection():
         diff = self.create_diff(self.ctd_iso, new_centroids)
         msk_np, COUNTER, detected_valid_shapes = self.transform_hough(self.img_iso, self.msk_iso, self.ctd_iso, new_centroids, diff, f,
                                                                  self.patient_dir, self.COUNTER)
+        new_msk_iso = nib.Nifti1Image(msk_np, self.msk_iso.affine, self.msk_iso.header)
+        nib.save(new_msk_iso, os.path.join(self.patient_dir, f'{self.mode}_pd_{self.vert}'))
         return msk_np
 
     """
@@ -533,12 +537,12 @@ class PedicleDetection():
             Show found ellipses
             """
             self.show_ellipses([(a_body, b_body, c_body, d_body), (a_canal, b_canal, c_canal, d_canal)], tmp_ROI,
-                          pedicle_detection=False, save=True, dir=f'run/visualized/{COUNTER}',
+                          pedicle_detection=False, save=True, dir=f'run_{self.mode}/visualized/{COUNTER}',
                           center=(bound_c_x, bound_c_y))
 
             COUNTER += 1
             self.show_ellipses([(a_body, b_body, c_body, d_body), (a_canal, b_canal, c_canal, d_canal)], tmp_ROI,
-                          pedicle_detection=True, save=True, dir=f'run/visualized/{COUNTER}',
+                          pedicle_detection=True, save=True, dir=f'run_{self.mode}/visualized/{COUNTER}',
                           center=(bound_c_x, bound_c_y))
             COUNTER += 1
             if self.evaluate(a_body, b_body, c_body, d_body) and \
@@ -722,6 +726,8 @@ class PedicleDetection():
         for v_index, v in enumerate(ctd_iso[1:]):
             detected_valid_shapes = False
             vert = v[0]
+            if vert != self.vert:
+                continue
             pos = v[1]
             # Filter mask to current vertebra
             msk_iso_new = nib.Nifti1Image(np.where(msk_iso.get_fdata() == vert, vert, 0), msk_iso.affine,
@@ -756,7 +762,7 @@ class PedicleDetection():
             plot_sag_centroids(axs[0], new_centroids, zooms)
             axs[1].imshow(msk_np_cor, cmap=cm_itk, alpha=0.3, vmin=1, vmax=64)
             plot_cor_centroids(axs[1], new_centroids, zooms)
-            fig.savefig(f'run/visualized/{COUNTER}')
+            fig.savefig(f'run_{self.mode}/visualized/{COUNTER}')
             COUNTER += 1
 
             msk_iso_new = nib.Nifti1Image(msk_np_new, msk_iso.affine, msk_iso.header)
@@ -827,7 +833,7 @@ class PedicleDetection():
             plot_sag_centroids(axs[0], new_centroids, zooms)
             axs[1].imshow(msk_np_cor, cmap=cm_itk, alpha=0.3, vmin=1, vmax=64)
             plot_cor_centroids(axs[1], new_centroids, zooms)
-            fig.savefig(f'run/visualized/{COUNTER}')
+            fig.savefig(f'run_{self.mode}/visualized/{COUNTER}')
             COUNTER += 1
 
             """
@@ -849,7 +855,7 @@ class PedicleDetection():
             plot_sag_centroids(axs[0], new_centroids, zooms)
             axs[1].imshow(msk_np_cor, cmap=cm_itk, alpha=0.3, vmin=1, vmax=64)
             plot_cor_centroids(axs[1], new_centroids, zooms)
-            fig.savefig(f'run/visualized/{COUNTER}')
+            fig.savefig(f'run_{self.mode}/visualized/{COUNTER}')
             COUNTER += 1
 
             # Append re-labeled array to global array
@@ -869,7 +875,7 @@ class PedicleDetection():
         plot_sag_centroids(axs[0], new_centroids, zooms)
         axs[1].imshow(msk_np_cor, cmap=cm_itk, alpha=0.3, vmin=1, vmax=64)
         plot_cor_centroids(axs[1], new_centroids, zooms)
-        fig.savefig(f'run/visualized/{COUNTER}')
+        fig.savefig(f'run_{self.mode}/visualized/{COUNTER}')
         COUNTER += 1
         return transformed, COUNTER, True
 
