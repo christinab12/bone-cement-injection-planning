@@ -53,20 +53,7 @@ class PedicleDetection():
             diff = self.create_diff(ctd_iso, new_centroids)
             msk_np, COUNTER, detected_valid_shapes = self.transform_hough(img_iso, msk_iso, ctd_iso, new_centroids, diff, f,
                                                                      scan, COUNTER, metrics_file)
-            if detected_valid_shapes:
-                new_msk_iso = nib.Nifti1Image(msk_np, msk_iso.affine, msk_iso.header)
-                nib.save(new_msk_iso, f'run/nifti/full_pipeline_{scan}.nii')
-        """
-        Performance metrics -> compare mask to ground truth from Anduin
-        """
-        if detected_valid_shapes:
-            sub_np = sub_iso.get_data()
-            dice, IoU = self.performance_metrics(msk_np, sub_np)
-            relative_error = self.compare_volumes(msk_np, sub_np, metrics_file)
-            dice, IoU = self.print_performance_metrics(dice, IoU, metrics_file)
-            return COUNTER, relative_error, dice, IoU, True
-        else:
-            return COUNTER, 0, 0, 0, False
+        return msk_np
 
     """
     STRAIGHTENING-HOUGH
