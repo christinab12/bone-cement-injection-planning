@@ -116,8 +116,9 @@ def run(args):
         healthy_img_path = os.path.join(healthy_dir, ct_file)
         healthy_vertebra_mask_path = os.path.join(healthy_dir, 'vert-mask.nii')
 
-        segmentation = SpineSegmentation('./models', healthy_img_path, healthy_vertebra_mask_path)
-        segmentation.apply()
+        if not os.path.isfile(healthy_vertebra_mask_path):
+            segmentation = SpineSegmentation('./models', healthy_img_path, healthy_vertebra_mask_path)
+            segmentation.apply()
         
         # load img and mask
         healthy_img, healthy_img_header, _ = load_scan(healthy_img_path)
@@ -144,8 +145,9 @@ def run(args):
         postop_img_path = os.path.join(postop_dir, ct_file)
         postop_vertebra_mask_path = os.path.join(postop_dir, 'vert-mask.nii')
 
-        segmentation = SpineSegmentation('./models', postop_img_path, postop_vertebra_mask_path)
-        segmentation.apply()
+        if not os.path.isfile(postop_vertebra_mask_path):
+            segmentation = SpineSegmentation('./models', postop_img_path, postop_vertebra_mask_path)
+            segmentation.apply()
 
         # load img and mask and compute cement
         postop_img, postop_img_header, _ = load_scan(postop_img_path)
