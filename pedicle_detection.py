@@ -33,26 +33,93 @@ from data_utilities import *
 
 class PedicleDetection():
 
-    def __init__(self, ):
+    def __init__(self, patient_dir, inpaint_img_path, inpaint_msk_path, vert):
+        self.vert = vert
         self.SLICES_PER_VERTEBRA = 5
+        self.COUNTER = 0
 
-    def apply(self, img_iso, msk_iso, sub_iso, ctd_iso, scan, COUNTER, metrics_file,
-                                     only_eval=False):
+        relative_error_list = []
+        dice_list = []
+        IoU_list = []
+
+        sys.stdout.write(f'{patient_dir}:\n\n')
+        """
+        Input: segmentation mask and centroids
+        """
+        # Load files
+        img_nib = nib.load(inpaint_img_path)
+        msk_nib = nib.load(inpaint_msk_path)
+        ctd_list = load_centroids(f'{patient_dir}/{patient_dir[2:]}_inpaint_seg-subreg_ctd.json')
+
+        """
+        Re-orient image and centroids
+        """
+        # Check img zooms
+        zooms = img_nib.header.get_zooms()
+        sys.stdout.write(f'img zooms = {zooms}\n')
+        # Check img orientation
+        axs_code = nio.ornt2axcodes(nio.io_orientation(img_nib.affine))
+        sys.stdout.write(f'img orientation code: {axs_code}\n')
+        # Check centroids
+        sys.stdout.write(f'Centroid List: {ctd_list}\n')
+        # Resample and Reorient data
+        img_iso = resample_nib(img_nib, voxel_spacing=(1, 1, 1), order=3)
+        msk_iso = resample_nib(msk_nib, voxel_spacing=(1, 1, 1),
+                               order=0)  # or resample based on img: resample_mask_to(msk_nib, img_iso)
+        ctd_iso = rescale_centroids(ctd_list, img_nib, (1, 1, 1))
+
+        img_iso = reorient_to(img_iso, axcodes_to=('I', 'P', 'L'))  # FINAL!
+        msk_iso = reorient_to(msk_iso, axcodes_to=('I', 'P', 'L'))  # FINAL!
+        ctd_iso = reorient_centroids_to(ctd_iso, img_iso)  # FINAL!
+        # Check img zooms
+        zooms = img_iso.header.get_zooms()
+        sys.stdout.write(f'img zooms = {zooms}\n')
+        # Check img orientation
+        axs_code = nio.ornt2axcodes(nio.io_orientation(img_iso.affine))
+        sys.stdout.write(f'img orientation code: {axs_code}\n')
+        # Check centroids
+        sys.stdout.write(f'new centroids: {ctd_iso}\n')
+
+        """
+        Visualize re-sampled and re-oriented scan
+        """
+        # Get voxel data
+        im_np = img_iso.get_fdata().astype(np.float32)
+        msk_np = msk_iso.get_data().astype(np.uint8)
+        # Get the mid-slice of the scan and mask in both sagittal and coronal planes
+        im_np_sag = im_np[:, :, int(im_np.shape[2] / 2)]
+        im_np_cor = im_np[:, int(im_np.shape[1] / 2), :]
+        msk_np_sag = msk_np[:, :, int(msk_np.shape[2] / 2)]
+        msk_np_cor = msk_np[:, int(msk_np.shape[1] / 2), :]
+        # Plot
+        fig, axs = create_figure(96, im_np_sag, im_np_cor)
+        axs[0].imshow(im_np_sag, cmap=plt.cm.gray, norm=wdw_sbone)
+        axs[0].imshow(msk_np_sag, cmap=cm_itk, alpha=0.3, vmin=1, vmax=64)
+        plot_sag_centroids(axs[0], ctd_iso, zooms)
+        axs[1].imshow(im_np_cor, cmap=plt.cm.gray, norm=wdw_sbone)
+        axs[1].imshow(msk_np_cor, cmap=cm_itk, alpha=0.3, vmin=1, vmax=64)
+        plot_cor_centroids(axs[1], ctd_iso, zooms)
+        fig.savefig(f'run/visualized/{self.COUNTER}')
+        self.COUNTER += 1
+
+        self.img_iso = img_iso
+        self.msk_iso = msk_iso
+        self.ctd_iso = ctd_iso
+        self.patient_dir = patient_dir
+
+
+    def apply(self):
         """
         General pipeline for spine straightening and hough transform
         """
-        detected_valid_shapes = True
-        if only_eval:
-            msk_np = msk_iso.get_data()
-        else:
-            ctd_iso_df = pd.DataFrame(ctd_iso[1:], columns=['vert', ctd_iso[0][0], ctd_iso[0][1], ctd_iso[0][2]])
-            f = self.interpolation(img_iso, msk_iso, ctd_iso, 'sag')
-            principal_components = self.pca(ctd_iso_df)
-            principal_components = self.rescale(principal_components, ctd_iso_df, img_iso.shape)
-            new_centroids = self.create_centroids(img_iso, msk_iso, ctd_iso, principal_components)
-            diff = self.create_diff(ctd_iso, new_centroids)
-            msk_np, COUNTER, detected_valid_shapes = self.transform_hough(img_iso, msk_iso, ctd_iso, new_centroids, diff, f,
-                                                                     scan, COUNTER, metrics_file)
+        ctd_iso_df = pd.DataFrame(self.ctd_iso[1:], columns=['vert', self.ctd_iso[0][0], self.ctd_iso[0][1], self.ctd_iso[0][2]])
+        f = self.interpolation(self.img_iso, self.msk_iso, self.ctd_iso, 'sag')
+        principal_components = self.pca(ctd_iso_df)
+        principal_components = self.rescale(principal_components, ctd_iso_df, self.img_iso.shape)
+        new_centroids = self.create_centroids(self.img_iso, self.msk_iso, self.ctd_iso, principal_components)
+        diff = self.create_diff(self.ctd_iso, new_centroids)
+        msk_np, COUNTER, detected_valid_shapes = self.transform_hough(self.img_iso, self.msk_iso, self.ctd_iso, new_centroids, diff, f,
+                                                                 self.patient_dir, self.COUNTER)
         return msk_np
 
     """
@@ -638,7 +705,7 @@ class PedicleDetection():
         for i in range(1, len(ctr_list)):
             ctr_list[i] = [ctr_list[i][0]] + [x * scaling_factor for x in ctr_list[i][1:]]
 
-    def transform_hough(self, img_iso, msk_iso, ctd_iso, new_centroids, diff, f, scan, COUNTER, metrics_file):
+    def transform_hough(self, img_iso, msk_iso, ctd_iso, new_centroids, diff, f, scan, COUNTER):
         """
         Transformation (Rotation) of each vertebra and hough transform
         """
@@ -697,7 +764,6 @@ class PedicleDetection():
                                                      target_shape=msk_iso_new.shape, interpolation='nearest')
             # Current vertebra volume
             msk_np_new = msk_iso_new.get_data()
-            self.print_vert_volume(msk_np_new, vert, metrics_file)
             msk_iso_new_hough = nib.Nifti1Image(np.where(msk_np_new == vert, 1, 0), msk_iso_new.affine,
                                                 msk_iso_new.header)
 

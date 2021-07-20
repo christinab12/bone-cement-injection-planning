@@ -7,6 +7,7 @@ from helper import compute_vol, load_scan, get_vert_range, compute_cement
 from segmentation_pipeline import SpineSegmentation
 from spine_straighten import SpineStraighten
 from inpaint import Inpaint
+from pedicle_detection import PedicleDetection
 
 def get_args():
     parser = argparse.ArgumentParser(description='Bone Cement Planning Pipeline')
@@ -91,7 +92,11 @@ def run(args):
     if not os.path.isfile(inpaint_mask_path):
         inpainting = Inpaint(straighten_scan_path, straighten_mask_path, vertebra_fracture_id, inpaint_img_path, inpaint_mask_path)
         inpainting.apply(mode='fuse') # fuse is for using lateral and coronal models and fusing results
-    
+
+    # ________PEDICLE DETECTION PART________ #
+    pedicle_detection = PedicleDetection(patient_dir, inpaint_img_path, inpaint_mask_path)
+    pedicle_detection.apply()
+
     inpainted_mask, inpaint_mask_header, _ = load_scan(inpaint_mask_path)
     inpaint_mask_spacing = inpaint_mask_header.get_zooms()
     inpainted_volume = compute_vol(inpainted_mask, vertebra_fracture_id, inpaint_mask_spacing)
