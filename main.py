@@ -57,7 +57,7 @@ def run(args):
     vertebra_mask, mask_header, _ = load_scan(vertebra_mask_path)
     mask_spacing = mask_header.get_zooms()
 
-    # ________PEDICLE DETECTION PART________ #
+    # ________PEDICLE DETECTION PART (FRACTURED) ________ #
 
     # define path to saved pedicle detected inpainted mask
     segmentation_pd_mask_path = os.path.join(patient_dir, f'segmentation_pd_{vertebra_fracture_id}.nii')
@@ -108,7 +108,7 @@ def run(args):
                              inpaint_mask_path)
         inpainting.apply(mode='fuse') # fuse is for using lateral and coronal models and fusing results
 
-    # ________PEDICLE DETECTION PART________ #
+    # ________PEDICLE DETECTION PART (INPAINTED) ________ #
 
     # define path to saved pedicle detected inpainted mask
     inpaint_pd_mask_path = os.path.join(patient_dir, f'inpaint_pd_{vertebra_fracture_id}.nii')

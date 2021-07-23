@@ -2,7 +2,6 @@ import nilearn.image
 import numpy as np
 import pandas as pd
 import gc
-import matplotlib.pyplot as plt
 import SimpleITK as sitk
 import scipy.ndimage
 from sklearn.decomposition import PCA
@@ -13,20 +12,12 @@ from scipy.ndimage import affine_transform
 from scipy.misc import derivative
 import sys
 import cv2
-import math
 import os
-
 import matplotlib.patches
 import matplotlib.pyplot as plt
-
 import math
-import sys
-
-import numpy as np
-from matplotlib import pyplot as plt
 from matplotlib import patches
 import SimpleITK as sitk
-import cv2
 from skimage.feature import canny
 
 from data_utilities import *
@@ -39,10 +30,6 @@ class PedicleDetection():
         self.mode = mode
         self.SLICES_PER_VERTEBRA = 5
         self.COUNTER = 0
-
-        relative_error_list = []
-        dice_list = []
-        IoU_list = []
 
         sys.stdout.write(f'{patient_dir}:\n\n')
         """
@@ -1179,6 +1166,9 @@ class PedicleDetection():
     """
 
     def read_image(self, path, mod):
+        """
+        Read image and permute axes
+        """
         itk_img = sitk.ReadImage(path)
         if mod == 'no_mod':
             itk_img = sitk.PermuteAxes(itk_img, [2, 0, 1])
@@ -1189,6 +1179,9 @@ class PedicleDetection():
 
 
     def print_image_information(self, itk_img):
+        """
+        Print information about ITK-image
+        """
         sys.stdout.write('Information about SimpleITK-image\n')
         sys.stdout.write(f'origin: {str(itk_img.GetOrigin())}\n')
         sys.stdout.write(f'size: {str(itk_img.GetSize())}\n')
@@ -1199,20 +1192,35 @@ class PedicleDetection():
 
 
     def convert_img_to_numpy(self, itk_img):
+        """
+        Convert an ITK-image to a numpy array
+        """
         return sitk.GetArrayFromImage(itk_img)
 
 
     def extract_single_vertebra(self, img, label):
+        """
+        Extract single vertebra from numpy-array
+        :param img:
+        :param label:
+        :return:
+        """
         return np.where(img == label, 1, 0)
 
 
     def crop_2D_image(self, img, slice_nb):
+        """
+        Extract axial slice from numpy-array
+        """
         # Crop particular 2D image
         img_cropped = img[slice_nb]
         return img_cropped
 
 
     def detect_edges(self, img, SHOW_ATLAS=False):
+        """
+        Edge detection filter
+        """
         edges = canny(img, sigma=2.0,
                       low_threshold=0.55, high_threshold=0.8)
         if SHOW_ATLAS:
@@ -1224,6 +1232,9 @@ class PedicleDetection():
 
 
     def show_ellipses(self, params, msk, pedicle_detection=False, save=False, dir=None, center=None):
+        """
+        Visualize ellipse (there is an option to also display the detected pedicle)
+        """
         if center is not None:
             # Center of mass
             bound_c_x = center[0]
@@ -1286,6 +1297,9 @@ class PedicleDetection():
 
 
     def pedicle_detection(self, params, msk):
+        """
+        Perform pedicle detection according to detected ellipses on axial slice
+        """
         # Plot line that connects the two centroids
         x_values = [params[0][2], params[1][2]]
         y_values = [params[0][3], params[1][3]]
@@ -1322,25 +1336,10 @@ class PedicleDetection():
         sol = np.linalg.solve(np.array([[x_1, 1], [x_2, 1]]), np.array([y_1, y_2]))
         return sol[0], sol[1]
 
-
-    def show_circle(self, r, c, d, edges):
-
-        sys.stdout.write(f'We predict the following circle: x = {c}, y = {d}, r = {r}\n')
-
-        fig, ax = plt.subplots()
-        fig.set_size_inches(4, 4)
-        plt.imshow(edges, cmap=plt.cm.Greys_r, aspect='auto')
-
-        Drawing_uncolored_circle = plt.Circle((c, d),
-                                              r,
-                                              color='r', fill=True)
-
-        ax.add_artist(Drawing_uncolored_circle)
-        plt.title('Circle')
-        plt.show()
-
-
     def show_image(self, img):
+        """
+        Show 2D-numpy-array as a plot
+        """
         fig = plt.figure()
         fig.set_size_inches(3, 8)
         plt.imshow(img, cmap=plt.cm.Greys_r, aspect='auto')
@@ -1348,6 +1347,9 @@ class PedicleDetection():
 
 
     def dilation(self, img):
+        """
+        Perform dilation
+        """
         img = img.astype(np.uint8)
         kernel = np.ones((3, 3), np.uint8)
         return cv2.dilate(img, kernel, iterations=1)
