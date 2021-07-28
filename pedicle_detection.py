@@ -2,7 +2,6 @@ import nilearn.image
 import numpy as np
 import pandas as pd
 import gc
-import SimpleITK as sitk
 import scipy.ndimage
 from sklearn.decomposition import PCA
 from skimage.measure import block_reduce
@@ -762,6 +761,11 @@ class PedicleDetection():
 
             c = 0
             hole_filling_factor = 0.05
+            # Fill holes
+            tmp = sitk.GetImageFromArray(msk_iso_new_hough.get_data())
+            tmp = sitk.BinaryFillhole(tmp)
+            tmp = sitk.GetArrayFromImage(tmp)
+            msk_iso_new_hough = nib.Nifti1Image(tmp, msk_iso_new_hough.affine, msk_iso_new_hough.header)
             while True:
                 # Search for ellipses until enough valid assignments were found
                 if c != 0:
@@ -791,13 +795,14 @@ class PedicleDetection():
                     # Constraint can be varied: for instance, we could demand at least 2 valid ellipses
                     detected_valid_shapes = True
                     break
+
                 if hole_filling_factor > 0.10:
                     # We did not find a successful assignment, even after morphological closing
                     break
                 COUNTER -= 10
-                if c != 0:
-                    hole_filling_factor += 0.01
+                hole_filling_factor += 0.01
                 c += 1
+            # TODO: CHANGED
             if detected_valid_shapes:
                 a_body, b_body, c_body, d_body = self.fit_cylinder(params_body)
                 a_canal, b_canal, c_canal, d_canal = self.fit_cylinder(params_canal)
