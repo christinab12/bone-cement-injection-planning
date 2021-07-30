@@ -625,10 +625,10 @@ class PedicleDetection():
             slice = self.crop_2D_image(msk, i)
             if valid:
                 res = np.fromfunction(lambda j, k: k * m + b < j, (msk.shape[1], msk.shape[2]))
-                res = np.where(res == True, 5, vert_index)
+                res = np.where(res == True, 30, vert_index)
                 bool_mask = np.where(slice == 0, False, True)
                 res = np.where(bool_mask == False, 0, res)
-                res = np.where(res == 5, 0, res)
+                # res = np.where(res == 30, 0, res)
                 msk[i] = res
             else:
                 msk[i] = np.where(slice != 0, vert_index, 0)
