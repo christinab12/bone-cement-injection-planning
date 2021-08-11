@@ -7,6 +7,7 @@ from helper import compute_vol, load_scan, get_vert_range, compute_cement
 from segmentation_pipeline import SpineSegmentation
 from spine_straighten import SpineStraighten
 from inpaint import Inpaint
+from pedicle_detection import PedicleDetection
 
 def get_args():
     parser = argparse.ArgumentParser(description='Bone Cement Planning Pipeline')
@@ -50,11 +51,26 @@ def run(args):
         segmentation = SpineSegmentation('./models', patient_scan_path, vertebra_mask_path)
         segmentation.apply()
 
-    # load vertebra mask and compute volume of fracture
+    # load vertebra mask
     img, img_header, _ = load_scan(patient_scan_path)
+    img_spacing = img_header.get_zooms()
     vertebra_mask, mask_header, _ = load_scan(vertebra_mask_path)
     mask_spacing = mask_header.get_zooms()
-    fractured_volume = compute_vol(vertebra_mask, vertebra_fracture_id, mask_spacing)
+
+    # ________PEDICLE DETECTION PART (FRACTURED) ________ #
+
+    # define path to saved pedicle detected inpainted mask
+    segmentation_pd_mask_path = os.path.join(patient_dir, f'segmentation_pd_{vertebra_fracture_id}.nii')
+    segmentation_pd_cent_path = f'{patient_scan_path[:-10]}_seg-subreg_ctd.json'
+    if not os.path.isfile(segmentation_pd_mask_path):
+        pedicle_detection = PedicleDetection(patient_dir, patient_scan_path, vertebra_mask_path,
+                                             segmentation_pd_cent_path, vertebra_fracture_id, mode='segmentation')
+        pedicle_detection.apply()
+
+    # load vertebra mask with pedicle detection applied and compute volume
+    vertebra_pd_mask, mask_pd_header, _ = load_scan(segmentation_pd_mask_path)
+    pd_mask_spacing = mask_pd_header.get_zooms()
+    fractured_volume = compute_vol(vertebra_pd_mask, vertebra_fracture_id, pd_mask_spacing)
 
     # ________SPINE STRAIGHTENING PART________ #  
     
@@ -84,14 +100,25 @@ def run(args):
     # ________INPAINTING PART________ # 
 
     # define path to save inpainted scan and mask
-    inpaint_mask_path = os.path.join(patient_dir, 'inpaint_mask_%s.nii.gz'%(vertebra_fracture_id))
+    inpaint_mask_path = os.path.join(patient_dir, 'inpaint_mask_fuse_%s.nii.gz'%(vertebra_fracture_id))
     inpaint_img_path =  os.path.join(patient_dir, 'inpaint_img_%s.nii.gz'%(vertebra_fracture_id)) 
     # if this step has not be done already perform inpainting
     if not os.path.isfile(inpaint_mask_path):
-        inpainting = Inpaint(straighten_scan_path, straighten_mask_path, vertebra_fracture_id, inpaint_img_path, inpaint_mask_path)
+        inpainting = Inpaint(straighten_scan_path, straighten_mask_path, vertebra_fracture_id, inpaint_img_path,
+                             inpaint_mask_path)
         inpainting.apply(mode='fuse') # fuse is for using lateral and coronal models and fusing results
-    
-    inpainted_mask, inpaint_mask_header, _ = load_scan(inpaint_mask_path)
+
+    # ________PEDICLE DETECTION PART (INPAINTED) ________ #
+
+    # define path to saved pedicle detected inpainted mask
+    inpaint_pd_mask_path = os.path.join(patient_dir, f'inpaint_pd_{vertebra_fracture_id}.nii')
+    inpaint_pd_cent_path = f'{patient_dir}/{patient_dir[2:]}_inpaint_seg-subreg_ctd.json'
+    if not os.path.isfile(inpaint_pd_mask_path):
+        pedicle_detection = PedicleDetection(patient_dir, inpaint_img_path, inpaint_mask_path,
+                                             inpaint_pd_cent_path, vertebra_fracture_id, mode='inpaint')
+        pedicle_detection.apply()
+
+    inpainted_mask, inpaint_mask_header, _ = load_scan(inpaint_pd_mask_path)
     inpaint_mask_spacing = inpaint_mask_header.get_zooms()
     inpainted_volume = compute_vol(inpainted_mask, vertebra_fracture_id, inpaint_mask_spacing)
 
@@ -115,13 +142,22 @@ def run(args):
         healthy_img_path = os.path.join(healthy_dir, ct_file)
         healthy_vertebra_mask_path = os.path.join(healthy_dir, 'vert-mask.nii')
 
-        segmentation = SpineSegmentation('./models', healthy_img_path, healthy_vertebra_mask_path)
-        segmentation.apply()
+        if not os.path.isfile(healthy_vertebra_mask_path):
+            segmentation = SpineSegmentation('./models', healthy_img_path, healthy_vertebra_mask_path)
+            segmentation.apply()
+
+        # define path to saved pedicle detected healthy mask
+        healthy_pd_mask_path = os.path.join(patient_dir, f'healthy_pd_{vertebra_fracture_id}.nii')
+        healthy_pd_cent_path = f'{healthy_img_path[:-10]}_seg-subreg_ctd.json'
+        if not os.path.isfile(healthy_pd_mask_path):
+            pedicle_detection = PedicleDetection(patient_dir, healthy_img_path, healthy_vertebra_mask_path,
+                                                 healthy_pd_cent_path, vertebra_fracture_id, mode='healthy')
+            pedicle_detection.apply()
         
         # load img and mask
         healthy_img, healthy_img_header, _ = load_scan(healthy_img_path)
         healthy_img_spacing = healthy_img_header.get_zooms()
-        healthy_vertebra_mask, healthy_mask_header, _ = load_scan(healthy_vertebra_mask_path)
+        healthy_vertebra_mask, healthy_mask_header, _ = load_scan(healthy_pd_mask_path)
         healthy_mask_spacing = healthy_mask_header.get_zooms()
         # compute vertebra volume
         healthy_vertebra_volume = compute_vol(healthy_vertebra_mask, vertebra_fracture_id, healthy_mask_spacing)
@@ -131,7 +167,7 @@ def run(args):
 
     # if the scan after the fracture is available compare cement volume with computed upper bound
     if args.post_op: 
-        if not healthy:
+        if not args.healthy:
             postop_dir = os.path.join(patient_dir, list_dir[1])
         else:
             postop_dir = os.path.join(patient_dir, list_dir[2])
@@ -143,8 +179,9 @@ def run(args):
         postop_img_path = os.path.join(postop_dir, ct_file)
         postop_vertebra_mask_path = os.path.join(postop_dir, 'vert-mask.nii')
 
-        segmentation = SpineSegmentation('./models', postop_img_path, postop_vertebra_mask_path)
-        segmentation.apply()
+        if not os.path.isfile(postop_vertebra_mask_path):
+            segmentation = SpineSegmentation('./models', postop_img_path, postop_vertebra_mask_path)
+            segmentation.apply()
 
         # load img and mask and compute cement
         postop_img, postop_img_header, _ = load_scan(postop_img_path)
@@ -164,17 +201,17 @@ def run(args):
     
             viewer = napari.Viewer()
             viewer.add_image(img, name='fracture', scale=img_spacing)
-            viewer.add_labels(vertebra_mask, name='fractured_segmentation', scale=mask_spacing)
+            viewer.add_labels(vertebra_mask.astype(int), name='fractured_segmentation', scale=mask_spacing)
             viewer.add_image(straighten_scan_arr, name='straightened', scale=straighten_scan_spacing)
-            viewer.add_labels(straighten_mask_arr, name='straightened_segmentation', scale=straighten_mask_spacing)
-            viewer.add_labels(inpainted_mask, name='inpainted_segmentation', scale=inpaint_mask_spacing)
+            viewer.add_labels(straighten_mask_arr.astype(int), name='straightened_segmentation', scale=straighten_mask_spacing)
+            viewer.add_labels(inpainted_mask.astype(int), name='inpainted_segmentation', scale=inpaint_mask_spacing)
             
             if args.healthy:
                 viewer.add_image(healthy_img, name='healthy', scale=healthy_img_spacing)
-                viewer.add_labels(healthy_vertebra_mask, name='healthy-segmentation', scale=healthy_mask_spacing)    
+                viewer.add_labels(healthy_vertebra_mask.astype(int), name='healthy-segmentation', scale=healthy_mask_spacing)
             if args.post_op: 
                 viewer.add_image(postop_img, name='post-op', scale=postop_img_spacing)
-                viewer.add_labels(postop_vertebra_mask, name='post-op-segmentation', scale=postop_mask_spacing)
+                viewer.add_labels(postop_vertebra_mask.astype(int), name='post-op-segmentation', scale=postop_mask_spacing)
     
     # remove any temporarily created files
     if not args.save:
