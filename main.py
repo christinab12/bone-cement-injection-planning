@@ -20,6 +20,8 @@ def get_args():
     parser.add_argument('--height_scale', default=1, type=int, help='The height scale used for the spine straightening step.')
     parser.add_argument('--visualize', action='store_true', help='Set to true if you want to visualize outputs')
     parser.add_argument('--save', action='store_true', help='If set to true intermediate scans, e.g. straightened, inpainted are saved')
+    parser.add_argument('--pedicle_detection', action='store_true',
+                        help='If set to true, vertebra is separated after inpainting step, metrics are only taken with respect to the vertebral body')
     return parser.parse_args()
 
 def run(args):
@@ -215,13 +217,16 @@ def run(args):
     
     # remove any temporarily created files
     if not args.save:
-        #os.remove(vertebra_mask_path)
+        os.remove(vertebra_mask_path)
         os.remove(straighten_scan_path)
         os.remove(straighten_mask_path)
         os.remove(inpaint_mask_path)
         os.remove(inpaint_img_path)
+        os.remove(segmentation_pd_mask_path)
+        os.remove(inpaint_pd_mask_path)
         if args.healthy:
             os.remove(healthy_vertebra_mask_path)
+            os.remove(healthy_pd_mask_path)
         if args.post_op:
             os.remove(postop_vertebra_mask_path)
 
