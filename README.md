@@ -53,9 +53,9 @@ visualize: If set the scans and masks of all steps are shown using napari - caut
 save: If set the intermediate scans are stored
 ```
 
-## Pedicle detection
+## New Feature: Pedicle detection
 
-Pedicle detection is an additional part of BICEPS. It aims to increase accuracy by only considering vertebral bodies in the evaulations (in other words, it neglects the spinal processes as the current inpainting pipeline has sometimes problems reproducing them correctly).
+Pedicle detection is a new feature of BICEPS. It aims to increase accuracy by only considering vertebral bodies in the evaulations (in other words, it neglects the spinal processes as the current inpainting pipeline has sometimes problems reproducing them correctly).
 
 Vertebral bodies are separated from the spinal processes after the final inpainting step. For the comparison of volumes, the separation is also performed for the pre-fractured (healthy) and post-operative scan.
 
@@ -65,7 +65,7 @@ To enable pedicle detection, an additional parameter named --pedicle_detection h
 python main.py --patient_dir ./patient01/ --fracture 20 --healthy --post_op --pedicle_detection
 ```
 
-For pedicle detection to work properly, some additional input files have to be provided. The following tree summarized the required filed:
+For pedicle detection to work properly, some additional input files have to be provided. The following tree summarizes the required files:
 
 ```
 --patient01
