@@ -55,7 +55,7 @@ save: If set the intermediate scans are stored
 
 ## Models
 
-You can download all the trained models [here](https://zenodo.org/record/5838223#.YfOiEy8w0dV).
+You can download all the trained models [here](https://zenodo.org/record/5838223#.YfOiEy8w0dV). After download place them in the ```models``` directory.
 
 ## New Feature: Pedicle detection
 
