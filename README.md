@@ -1,4 +1,4 @@
-# BoneCementInjectionPlanning
+# Bone Cement Injection Planning
 
 ## What is this?
 This repository provides the code for running BICEPS (Bone Injection of CEment Planning System). BICEPS takes a CT image of a patient with one or more Vertebral Compression Fractures and generates an estimation of the healthy state of the patients spine to enable treatment planning. The methodology was first introduced and is described in [Patient-specific virtual spine straightening and vertebra inpainting: An automatic framework for osteoplasty planning](https://arxiv.org/abs/2103.07279). The main steps of the system, the inputs and outputs of each step are discribed in the visual example below.
@@ -52,6 +52,10 @@ height_scale: *to be described*
 visualize: If set the scans and masks of all steps are shown using napari - caution can be expensive to visualize all steps' outputs
 save: If set the intermediate scans are stored
 ```
+
+## Models
+
+You can download all the trained models used [here](https://zenodo.org/record/5838223#.YfOiEy8w0dV).
 
 ## New Feature: Pedicle detection
 
